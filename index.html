@@ -238,9 +238,17 @@
         </ul>
     </div>
 
-    <script>
-        // 로컬 스토리지에서 데이터 불러오기
-        let items = JSON.parse(localStorage.getItem('shoppingList')) || [];
+    <script type="module">
+        // Supabase 설정
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const SUPABASE_URL = 'https://fbkhprjestakicngvgdw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZia2hwcmplc3Rha2ljbmd2Z2R3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5NTc1ODEsImV4cCI6MjA4NjUzMzU4MX0.IdKdcaQKJlgh8py_RL7AUCOdNTB5rHGG1x-AEHMeG4M';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let items = [];
+        let isAdding = false; // 중복 추가 방지 플래그
 
         const itemInput = document.getElementById('itemInput');
         const addButton = document.getElementById('addButton');
@@ -253,6 +261,24 @@
             return div.innerHTML;
         };
 
+        // Supabase에서 데이터 불러오기
+        const loadItems = async () => {
+            console.log('loadItems 호출됨');
+            const { data, error } = await supabase
+                .from('shopping_items')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('❌ loadItems 실패:', error);
+                return;
+            }
+
+            console.log('✅ loadItems 성공, 항목 수:', data?.length || 0, '데이터:', data);
+            items = data || [];
+            renderList();
+        };
+
         // 리스트 렌더링
         const renderList = () => {
             if (items.length === 0) {
@@ -260,54 +286,95 @@
                 return;
             }
 
-            shoppingList.innerHTML = items.map((item, index) => `
-                <li class="shopping-item" data-index="${index}">
+            shoppingList.innerHTML = items.map((item) => `
+                <li class="shopping-item" data-id="${item.id}">
                     <input
                         type="checkbox"
-                        id="item-${index}"
+                        id="item-${item.id}"
                         ${item.checked ? 'checked' : ''}
                         data-action="toggle"
                     >
-                    <label for="item-${index}">${escapeHtml(item.text)}</label>
+                    <label for="item-${item.id}">${escapeHtml(item.text)}</label>
                     <button class="delete-button" data-action="delete">삭제</button>
                 </li>
             `).join('');
         };
 
         // 아이템 추가
-        const addItem = () => {
+        const addItem = async () => {
+            console.log('addItem 호출됨');
+
+            // 이미 추가 중이면 중복 실행 방지
+            if (isAdding) {
+                console.log('이미 추가 중이므로 스킵');
+                return;
+            }
+
             const text = itemInput.value.trim();
+            console.log('입력된 텍스트:', text);
+
             if (text === '') {
                 alert('물건 이름을 입력해주세요!');
                 return;
             }
 
-            items.push({
-                text,
-                checked: false
-            });
+            isAdding = true;
+            addButton.disabled = true;
 
-            saveAndRender();
-            itemInput.value = '';
-            itemInput.focus();
+            try {
+                console.log('Supabase insert 시작...');
+                const { data, error } = await supabase
+                    .from('shopping_items')
+                    .insert([{ text, checked: false }])
+                    .select();
+
+                if (error) {
+                    console.error('❌ Supabase insert 실패:', error);
+                    alert(`항목 추가에 실패했습니다: ${error.message}`);
+                    return;
+                }
+
+                console.log('✅ Supabase insert 성공:', data);
+                itemInput.value = '';
+                await loadItems();
+            } finally {
+                isAdding = false;
+                addButton.disabled = false;
+                itemInput.focus();
+            }
         };
 
         // 아이템 체크/언체크
-        const toggleItem = (index) => {
-            items[index].checked = !items[index].checked;
-            saveAndRender();
+        const toggleItem = async (id) => {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            const { error } = await supabase
+                .from('shopping_items')
+                .update({ checked: !item.checked })
+                .eq('id', id);
+
+            if (error) {
+                console.error('Error toggling item:', error);
+                return;
+            }
+
+            await loadItems();
         };
 
         // 아이템 삭제
-        const deleteItem = (index) => {
-            items.splice(index, 1);
-            saveAndRender();
-        };
+        const deleteItem = async (id) => {
+            const { error } = await supabase
+                .from('shopping_items')
+                .delete()
+                .eq('id', id);
 
-        // 저장 및 렌더링
-        const saveAndRender = () => {
-            localStorage.setItem('shoppingList', JSON.stringify(items));
-            renderList();
+            if (error) {
+                console.error('Error deleting item:', error);
+                return;
+            }
+
+            await loadItems();
         };
 
         // 이벤트 위임 - 체크박스와 삭제 버튼 처리
@@ -315,28 +382,29 @@
             const listItem = e.target.closest('.shopping-item');
             if (!listItem) return;
 
-            const index = parseInt(listItem.dataset.index, 10);
+            const id = parseInt(listItem.dataset.id, 10);
             const action = e.target.dataset.action;
 
             if (action === 'toggle') {
-                toggleItem(index);
+                toggleItem(id);
             } else if (action === 'delete') {
-                deleteItem(index);
+                deleteItem(id);
             }
         });
 
         // 추가 버튼 클릭 이벤트
         addButton.addEventListener('click', addItem);
 
-        // Enter 키로 아이템 추가 (keydown 사용 - MDN 권장)
+        // Enter 키로 아이템 추가
         itemInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.isComposing) {
+                e.preventDefault(); // 기본 동작 방지
                 addItem();
             }
         });
 
-        // 초기 렌더링
-        renderList();
+        // 초기 데이터 로드
+        loadItems();
     </script>
 </body>
 </html>
