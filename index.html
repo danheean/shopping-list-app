@@ -61,7 +61,7 @@
         }
 
         h1 {
-            font-size: 36px;
+            font-size: 48px;
             color: #333;
             margin-bottom: 30px;
             text-align: center;
@@ -84,13 +84,13 @@
         }
 
         .date-filter input[type="text"] {
-            padding: 8px 12px;
-            font-size: 16px;
+            padding: 10px 14px;
+            font-size: 20px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-family: inherit;
             cursor: pointer;
-            width: 140px;
+            width: 160px;
         }
 
         /* Flatpickr 커스텀 스타일 */
@@ -115,8 +115,8 @@
         }
 
         .filter-button {
-            padding: 8px 16px;
-            font-size: 14px;
+            padding: 10px 20px;
+            font-size: 20px;
             background: transparent;
             color: #ff9999;
             border: 1px solid #ff9999;
@@ -144,8 +144,8 @@
 
         #itemInput {
             flex: 1;
-            padding: 12px 16px;
-            font-size: 18px;
+            padding: 14px 18px;
+            font-size: 22px;
             border: none;
             background: transparent;
             border-bottom: 2px solid #ddd;
@@ -159,8 +159,8 @@
         }
 
         #addButton {
-            padding: 12px 24px;
-            font-size: 18px;
+            padding: 14px 28px;
+            font-size: 22px;
             background: #ff9999;
             color: white;
             border: none;
@@ -202,11 +202,11 @@
         }
 
         .shopping-item input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
+            width: 26px;
+            height: 26px;
             cursor: pointer;
             accent-color: #ff9999;
-            margin-top: 2px;
+            margin-top: 3px;
         }
 
         .shopping-item label {
@@ -218,12 +218,12 @@
         }
 
         .item-text {
-            font-size: 20px;
-            margin-bottom: 4px;
+            font-size: 26px;
+            margin-bottom: 6px;
         }
 
         .item-dates {
-            font-size: 13px;
+            font-size: 18px;
             color: #999;
             display: flex;
             gap: 12px;
@@ -244,17 +244,17 @@
         }
 
         .delete-button {
-            padding: 6px 12px;
+            padding: 8px 16px;
             background: transparent;
             color: #ff6666;
             border: 1px solid #ff6666;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 18px;
             font-family: inherit;
             transition: all 0.3s;
             align-self: flex-start;
-            margin-top: -2px;
+            margin-top: 0px;
         }
 
         .delete-button:hover {
@@ -265,7 +265,7 @@
         .empty-message {
             text-align: center;
             color: #999;
-            font-size: 18px;
+            font-size: 24px;
             padding: 40px 0;
             display: flex;
             flex-direction: column;
@@ -314,7 +314,19 @@
             }
 
             h1 {
-                font-size: 28px;
+                font-size: 40px;
+            }
+
+            .item-text {
+                font-size: 24px;
+            }
+
+            #itemInput {
+                font-size: 20px;
+            }
+
+            #addButton {
+                font-size: 20px;
             }
         }
     </style>
@@ -329,7 +341,7 @@
                 <input type="text" id="dateFilter" placeholder="날짜 선택">
             </div>
             <button class="filter-button active" id="showAllButton">전체 보기</button>
-            <span id="filterStatus" style="color: #999; font-size: 14px;"></span>
+            <span id="filterStatus" style="color: #999; font-size: 18px;"></span>
         </div>
 
         <div class="input-container">
