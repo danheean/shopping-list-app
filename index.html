@@ -142,16 +142,35 @@
 
         .shopping-item label {
             flex: 1;
-            font-size: 20px;
             cursor: pointer;
             transition: all 0.3s;
             user-select: none;
             color: #333;
         }
 
-        .shopping-item input[type="checkbox"]:checked + label {
+        .item-text {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .item-dates {
+            font-size: 13px;
+            color: #999;
+            display: flex;
+            gap: 12px;
+        }
+
+        .completed-date {
+            color: #66bb6a;
+        }
+
+        .shopping-item input[type="checkbox"]:checked + label .item-text {
             text-decoration: line-through;
             color: #999;
+            opacity: 0.6;
+        }
+
+        .shopping-item input[type="checkbox"]:checked + label .item-dates {
             opacity: 0.6;
         }
 
@@ -261,6 +280,13 @@
             return div.innerHTML;
         };
 
+        // 날짜 포맷 함수 (월/일)
+        const formatDate = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        };
+
         // Supabase에서 데이터 불러오기
         const loadItems = async () => {
             console.log('loadItems 호출됨');
@@ -294,7 +320,13 @@
                         ${item.checked ? 'checked' : ''}
                         data-action="toggle"
                     >
-                    <label for="item-${item.id}">${escapeHtml(item.text)}</label>
+                    <label for="item-${item.id}">
+                        <div class="item-text">${escapeHtml(item.text)}</div>
+                        <div class="item-dates">
+                            📅 ${formatDate(item.created_at)}
+                            ${item.completed_at ? `<span class="completed-date">✅ ${formatDate(item.completed_at)}</span>` : ''}
+                        </div>
+                    </label>
                     <button class="delete-button" data-action="delete">삭제</button>
                 </li>
             `).join('');
@@ -349,9 +381,15 @@
             const item = items.find(i => i.id === id);
             if (!item) return;
 
+            const newChecked = !item.checked;
+            const updateData = {
+                checked: newChecked,
+                completed_at: newChecked ? new Date().toISOString() : null
+            };
+
             const { error } = await supabase
                 .from('shopping_items')
-                .update({ checked: !item.checked })
+                .update(updateData)
                 .eq('id', id);
 
             if (error) {
