@@ -726,15 +726,18 @@
                     // 커스텀 텍스트 표시
                     let customDisplay = monthYearContainer.querySelector('.custom-month-year');
                     if (!customDisplay) {
-                        customDisplay = document.createElement('span');
+                        customDisplay = document.createElement('div');
                         customDisplay.className = 'custom-month-year';
                         customDisplay.style.fontSize = '22px';
                         customDisplay.style.fontWeight = 'normal';
+                        customDisplay.style.width = '100%';
+                        customDisplay.style.textAlign = 'center';
+                        customDisplay.style.display = 'block';
                         monthYearContainer.appendChild(customDisplay);
                     }
                     customDisplay.textContent = `${currentYear}년 ${monthNames[currentMonth]}`;
                 }
-            }, 0);
+            }, 10);
         };
 
         // 전체 보기 버튼
