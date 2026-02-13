@@ -624,6 +624,12 @@
                         dayElem.classList.add('has-items');
                     }
                 },
+                onReady: (selectedDates, dateStr, instance) => {
+                    updateMonthYearDisplay(instance);
+                },
+                onMonthChange: (selectedDates, dateStr, instance) => {
+                    updateMonthYearDisplay(instance);
+                },
                 onChange: (selectedDates, dateStr) => {
                     if (dateStr) {
                         filterDate = dateStr;
@@ -632,6 +638,39 @@
                     }
                 }
             });
+        };
+
+        // 월/연도 표시 업데이트
+        const updateMonthYearDisplay = (instance) => {
+            const monthElement = instance.currentYearElement.parentElement.querySelector('.flatpickr-current-month .flatpickr-monthDropdown-months');
+            if (monthElement && instance.currentYearElement) {
+                const year = instance.currentYearElement.value;
+                const monthIndex = instance.monthElements[0].selectedOptions[0].value;
+                const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+
+                // 연도를 월 앞에 표시
+                instance.currentYearElement.parentElement.querySelector('.flatpickr-current-month').style.justifyContent = 'center';
+
+                // 연도 텍스트를 "년"과 함께 표시
+                if (!instance.currentYearElement.getAttribute('data-styled')) {
+                    const yearWrapper = document.createElement('span');
+                    yearWrapper.textContent = year + '년 ';
+                    instance.currentYearElement.style.display = 'none';
+                    instance.currentYearElement.parentElement.insertBefore(yearWrapper, monthElement);
+                    instance.currentYearElement.setAttribute('data-styled', 'true');
+
+                    // 연도 변경 시 업데이트
+                    instance.currentYearElement.addEventListener('change', () => {
+                        yearWrapper.textContent = instance.currentYearElement.value + '년 ';
+                    });
+                } else {
+                    const yearWrapper = instance.currentYearElement.previousElementSibling;
+                    if (yearWrapper) {
+                        yearWrapper.textContent = year + '년 ';
+                    }
+                }
+            }
+        };
         };
 
         // 전체 보기 버튼
