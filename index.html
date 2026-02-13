@@ -118,25 +118,16 @@
             font-size: 18px !important;
         }
 
-        /* 월/연도 표시 크기 */
+        /* 월/연도 표시 크기 - 한국식 순서: 2026년 2월 */
         .flatpickr-current-month {
             font-size: 22px !important;
             justify-content: center !important;
             display: flex !important;
             align-items: center !important;
             padding: 10px 0 !important;
-            flex-direction: row-reverse !important;
         }
 
-        .flatpickr-current-month .flatpickr-monthDropdown-months {
-            font-size: 22px !important;
-            margin: 0 !important;
-        }
-
-        .flatpickr-current-month input.cur-year,
-        .flatpickr-current-month .numInput {
-            font-size: 22px !important;
-            width: 70px !important;
+        .flatpickr-current-month .numInputWrapper {
             order: 1 !important;
         }
 
@@ -144,10 +135,20 @@
             font-size: 22px !important;
             font-weight: normal !important;
             order: 2 !important;
+            margin-left: 2px !important;
+            margin-right: 6px !important;
         }
 
         .flatpickr-current-month .flatpickr-monthDropdown-months {
+            font-size: 22px !important;
+            margin: 0 !important;
             order: 3 !important;
+        }
+
+        .flatpickr-current-month input.cur-year,
+        .flatpickr-current-month .numInput {
+            font-size: 22px !important;
+            width: 70px !important;
         }
 
         /* 화살표 크기 */
@@ -661,19 +662,21 @@
             }
         });
 
-        // 항목이 있는 날짜 목록 가져오기
+        // 타임스탬프를 로컬 날짜 문자열(YYYY-MM-DD)로 변환
+        const toLocalDateStr = (dateString) => {
+            const d = new Date(dateString);
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        };
+
+        // 항목이 있는 날짜 목록 가져오기 (로컬 타임존 기준)
         const getDatesWithItems = () => {
             const dates = new Set();
             items.forEach(item => {
                 if (item.created_at) {
-                    // 문자열에서 직접 날짜 부분 추출 (타임존 문제 방지)
-                    const dateStr = item.created_at.split('T')[0];
-                    dates.add(dateStr);
+                    dates.add(toLocalDateStr(item.created_at));
                 }
                 if (item.completed_at) {
-                    // 문자열에서 직접 날짜 부분 추출 (타임존 문제 방지)
-                    const dateStr = item.completed_at.split('T')[0];
-                    dates.add(dateStr);
+                    dates.add(toLocalDateStr(item.completed_at));
                 }
             });
             return Array.from(dates);
@@ -701,7 +704,7 @@
                     }
                 },
                 onDayCreate: (dObj, dStr, fp, dayElem) => {
-                    const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+                    const dateStr = toLocalDateStr(dayElem.dateObj);
                     if (datesWithItems.includes(dateStr)) {
                         dayElem.classList.add('has-items');
                     }
@@ -731,17 +734,14 @@
                 const monthYearContainer = instance.calendarContainer.querySelector('.flatpickr-current-month');
                 if (!monthYearContainer) return;
 
-                // "년" 텍스트가 없으면 추가
+                // "년" 텍스트가 없으면 추가 (flex 직접 자식으로 삽입해야 order 적용됨)
                 if (!monthYearContainer.querySelector('.year-suffix')) {
-                    const yearInput = monthYearContainer.querySelector('.cur-year, .numInput');
-                    if (yearInput) {
+                    const numInputWrapper = monthYearContainer.querySelector('.numInputWrapper');
+                    if (numInputWrapper) {
                         const yearSuffix = document.createElement('span');
                         yearSuffix.className = 'year-suffix';
                         yearSuffix.textContent = '년';
-                        yearSuffix.style.fontSize = '22px';
-                        yearSuffix.style.marginLeft = '4px';
-                        yearSuffix.style.marginRight = '8px';
-                        yearInput.parentNode.insertBefore(yearSuffix, yearInput.nextSibling);
+                        numInputWrapper.after(yearSuffix);
                     }
                 }
             }, 50);
