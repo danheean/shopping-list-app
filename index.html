@@ -666,12 +666,14 @@
             const dates = new Set();
             items.forEach(item => {
                 if (item.created_at) {
-                    const date = new Date(item.created_at);
-                    dates.add(date.toISOString().split('T')[0]);
+                    // 문자열에서 직접 날짜 부분 추출 (타임존 문제 방지)
+                    const dateStr = item.created_at.split('T')[0];
+                    dates.add(dateStr);
                 }
                 if (item.completed_at) {
-                    const date = new Date(item.completed_at);
-                    dates.add(date.toISOString().split('T')[0]);
+                    // 문자열에서 직접 날짜 부분 추출 (타임존 문제 방지)
+                    const dateStr = item.completed_at.split('T')[0];
+                    dates.add(dateStr);
                 }
             });
             return Array.from(dates);
