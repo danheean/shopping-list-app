@@ -267,6 +267,16 @@
             }
         }
 
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .empty-message:has(span:first-child:contains("🔄")) {
+            animation: none;
+        }
+
         @media (max-width: 768px) {
             .notebook {
                 padding: 30px 40px 30px 60px;
@@ -326,6 +336,7 @@
         let items = [];
         let isAdding = false; // 중복 추가 방지 플래그
         let filterDate = null; // 필터링할 날짜
+        let isLoading = true; // 초기 로딩 상태
 
         const itemInput = document.getElementById('itemInput');
         const addButton = document.getElementById('addButton');
@@ -371,6 +382,9 @@
         // Supabase에서 데이터 불러오기
         const loadItems = async () => {
             console.log('loadItems 호출됨');
+            isLoading = true;
+            renderList(); // 로딩 상태 표시
+
             const { data, error } = await supabase
                 .from('shopping_items')
                 .select('*')
@@ -378,16 +392,25 @@
 
             if (error) {
                 console.error('❌ loadItems 실패:', error);
+                isLoading = false;
+                renderList();
                 return;
             }
 
             console.log('✅ loadItems 성공, 항목 수:', data?.length || 0, '데이터:', data);
             items = data || [];
+            isLoading = false;
             renderList();
         };
 
         // 리스트 렌더링
         const renderList = () => {
+            // 로딩 중일 때
+            if (isLoading) {
+                shoppingList.innerHTML = '<li class="empty-message">🔄 데이터를 불러오는 중...</li>';
+                return;
+            }
+
             const filteredItems = getFilteredItems();
 
             // 필터 상태 업데이트
