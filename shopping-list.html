@@ -248,6 +248,7 @@
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let items = [];
+        let isAdding = false; // 중복 추가 방지 플래그
 
         const itemInput = document.getElementById('itemInput');
         const addButton = document.getElementById('addButton');
@@ -299,25 +300,36 @@
 
         // 아이템 추가
         const addItem = async () => {
+            // 이미 추가 중이면 중복 실행 방지
+            if (isAdding) return;
+
             const text = itemInput.value.trim();
             if (text === '') {
                 alert('물건 이름을 입력해주세요!');
                 return;
             }
 
-            const { error } = await supabase
-                .from('shopping_items')
-                .insert([{ text, checked: false }]);
+            isAdding = true;
+            addButton.disabled = true;
 
-            if (error) {
-                console.error('Error adding item:', error);
-                alert('항목 추가에 실패했습니다.');
-                return;
+            try {
+                const { error } = await supabase
+                    .from('shopping_items')
+                    .insert([{ text, checked: false }]);
+
+                if (error) {
+                    console.error('Error adding item:', error);
+                    alert('항목 추가에 실패했습니다.');
+                    return;
+                }
+
+                itemInput.value = '';
+                await loadItems();
+            } finally {
+                isAdding = false;
+                addButton.disabled = false;
+                itemInput.focus();
             }
-
-            itemInput.value = '';
-            itemInput.focus();
-            await loadItems();
         };
 
         // 아이템 체크/언체크
@@ -374,6 +386,7 @@
         // Enter 키로 아이템 추가 (keydown 사용 - MDN 권장)
         itemInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
+                e.preventDefault(); // 기본 동작 방지
                 addItem();
             }
         });
