@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>쇼핑 리스트</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         * {
             margin: 0;
@@ -82,13 +83,35 @@
             align-items: center;
         }
 
-        .date-filter input[type="date"] {
+        .date-filter input[type="text"] {
             padding: 8px 12px;
             font-size: 16px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-family: inherit;
             cursor: pointer;
+            width: 140px;
+        }
+
+        /* Flatpickr 커스텀 스타일 */
+        .flatpickr-day.has-items {
+            position: relative;
+        }
+
+        .flatpickr-day.has-items::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background: #ff9999;
+            border-radius: 50%;
+        }
+
+        .flatpickr-day.has-items.selected::after {
+            background: white;
         }
 
         .filter-button {
@@ -303,7 +326,7 @@
         <div class="filter-container">
             <div class="date-filter">
                 <span>📅</span>
-                <input type="date" id="dateFilter">
+                <input type="text" id="dateFilter" placeholder="날짜 선택">
             </div>
             <button class="filter-button active" id="showAllButton">전체 보기</button>
             <span id="filterStatus" style="color: #999; font-size: 14px;"></span>
@@ -324,6 +347,7 @@
         </ul>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script type="module">
         // Supabase 설정
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -400,6 +424,7 @@
             console.log('✅ loadItems 성공, 항목 수:', data?.length || 0, '데이터:', data);
             items = data || [];
             isLoading = false;
+            initFlatpickr(); // 달력 업데이트
             renderList();
         };
 
@@ -556,17 +581,65 @@
             }
         });
 
-        // 날짜 필터 이벤트
-        dateFilter.addEventListener('change', (e) => {
-            filterDate = e.target.value;
-            showAllButton.classList.remove('active');
-            renderList();
-        });
+        // 항목이 있는 날짜 목록 가져오기
+        const getDatesWithItems = () => {
+            const dates = new Set();
+            items.forEach(item => {
+                if (item.created_at) {
+                    const date = new Date(item.created_at);
+                    dates.add(date.toISOString().split('T')[0]);
+                }
+                if (item.completed_at) {
+                    const date = new Date(item.completed_at);
+                    dates.add(date.toISOString().split('T')[0]);
+                }
+            });
+            return Array.from(dates);
+        };
+
+        // Flatpickr 초기화
+        let flatpickrInstance = null;
+        const initFlatpickr = () => {
+            const datesWithItems = getDatesWithItems();
+
+            if (flatpickrInstance) {
+                flatpickrInstance.destroy();
+            }
+
+            flatpickrInstance = flatpickr(dateFilter, {
+                dateFormat: 'Y-m-d',
+                locale: {
+                    weekdays: {
+                        shorthand: ['일', '월', '화', '수', '목', '금', '토'],
+                        longhand: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
+                    },
+                    months: {
+                        shorthand: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                        longhand: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+                    }
+                },
+                onDayCreate: (dObj, dStr, fp, dayElem) => {
+                    const dateStr = dayElem.dateObj.toISOString().split('T')[0];
+                    if (datesWithItems.includes(dateStr)) {
+                        dayElem.classList.add('has-items');
+                    }
+                },
+                onChange: (selectedDates, dateStr) => {
+                    if (dateStr) {
+                        filterDate = dateStr;
+                        showAllButton.classList.remove('active');
+                        renderList();
+                    }
+                }
+            });
+        };
 
         // 전체 보기 버튼
         showAllButton.addEventListener('click', () => {
             filterDate = null;
-            dateFilter.value = '';
+            if (flatpickrInstance) {
+                flatpickrInstance.clear();
+            }
             showAllButton.classList.add('active');
             renderList();
         });
