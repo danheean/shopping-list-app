@@ -116,7 +116,7 @@
 
         .shopping-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             padding: 12px 0;
             gap: 12px;
             animation: slideIn 0.3s ease;
@@ -138,6 +138,7 @@
             height: 20px;
             cursor: pointer;
             accent-color: #ff9999;
+            margin-top: 2px;
         }
 
         .shopping-item label {
@@ -184,6 +185,8 @@
             font-size: 14px;
             font-family: inherit;
             transition: all 0.3s;
+            align-self: flex-start;
+            margin-top: -2px;
         }
 
         .delete-button:hover {
