@@ -68,6 +68,51 @@
             letter-spacing: 2px;
         }
 
+        .filter-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .date-filter {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .date-filter input[type="date"] {
+            padding: 8px 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        .filter-button {
+            padding: 8px 16px;
+            font-size: 14px;
+            background: transparent;
+            color: #ff9999;
+            border: 1px solid #ff9999;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .filter-button:hover {
+            background: #ff9999;
+            color: white;
+        }
+
+        .filter-button.active {
+            background: #ff9999;
+            color: white;
+        }
+
         .input-container {
             display: flex;
             gap: 10px;
@@ -245,6 +290,15 @@
     <div class="notebook">
         <h1>쇼핑 리스트</h1>
 
+        <div class="filter-container">
+            <div class="date-filter">
+                <span>📅</span>
+                <input type="date" id="dateFilter">
+            </div>
+            <button class="filter-button active" id="showAllButton">전체 보기</button>
+            <span id="filterStatus" style="color: #999; font-size: 14px;"></span>
+        </div>
+
         <div class="input-container">
             <input
                 type="text"
@@ -271,10 +325,14 @@
 
         let items = [];
         let isAdding = false; // 중복 추가 방지 플래그
+        let filterDate = null; // 필터링할 날짜
 
         const itemInput = document.getElementById('itemInput');
         const addButton = document.getElementById('addButton');
         const shoppingList = document.getElementById('shoppingList');
+        const dateFilter = document.getElementById('dateFilter');
+        const showAllButton = document.getElementById('showAllButton');
+        const filterStatus = document.getElementById('filterStatus');
 
         // HTML 이스케이프 함수
         const escapeHtml = (text) => {
@@ -288,6 +346,26 @@
             if (!dateString) return '';
             const date = new Date(dateString);
             return `${date.getMonth() + 1}/${date.getDate()}`;
+        };
+
+        // 날짜가 같은지 확인 (시간 제외)
+        const isSameDate = (date1, date2) => {
+            if (!date1 || !date2) return false;
+            const d1 = new Date(date1);
+            const d2 = new Date(date2);
+            return d1.getFullYear() === d2.getFullYear() &&
+                   d1.getMonth() === d2.getMonth() &&
+                   d1.getDate() === d2.getDate();
+        };
+
+        // 아이템 필터링
+        const getFilteredItems = () => {
+            if (!filterDate) return items;
+
+            return items.filter(item => {
+                return isSameDate(item.created_at, filterDate) ||
+                       isSameDate(item.completed_at, filterDate);
+            });
         };
 
         // Supabase에서 데이터 불러오기
@@ -310,12 +388,23 @@
 
         // 리스트 렌더링
         const renderList = () => {
-            if (items.length === 0) {
-                shoppingList.innerHTML = '<li class="empty-message">아직 추가된 항목이 없습니다</li>';
+            const filteredItems = getFilteredItems();
+
+            // 필터 상태 업데이트
+            if (filterDate) {
+                const dateObj = new Date(filterDate);
+                filterStatus.textContent = `${dateObj.getMonth() + 1}월 ${dateObj.getDate()}일 항목 (${filteredItems.length}개)`;
+            } else {
+                filterStatus.textContent = '';
+            }
+
+            if (filteredItems.length === 0) {
+                const message = filterDate ? '해당 날짜에 항목이 없습니다' : '아직 추가된 항목이 없습니다';
+                shoppingList.innerHTML = `<li class="empty-message">${message}</li>`;
                 return;
             }
 
-            shoppingList.innerHTML = items.map((item) => `
+            shoppingList.innerHTML = filteredItems.map((item) => `
                 <li class="shopping-item" data-id="${item.id}">
                     <input
                         type="checkbox"
@@ -442,6 +531,21 @@
                 e.preventDefault(); // 기본 동작 방지
                 addItem();
             }
+        });
+
+        // 날짜 필터 이벤트
+        dateFilter.addEventListener('change', (e) => {
+            filterDate = e.target.value;
+            showAllButton.classList.remove('active');
+            renderList();
+        });
+
+        // 전체 보기 버튼
+        showAllButton.addEventListener('click', () => {
+            filterDate = null;
+            dateFilter.value = '';
+            showAllButton.classList.add('active');
+            renderList();
         });
 
         // 초기 데이터 로드
